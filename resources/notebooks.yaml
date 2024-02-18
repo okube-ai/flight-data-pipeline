@@ -1,0 +1,5 @@
+notebook-pipelines-dlt-brz-template:
+  source: ./notebooks/pipelines/dlt_trimdb.py
+  access_controls:
+    - group_name: account users
+      permission_level: CAN_READ

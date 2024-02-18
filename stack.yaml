@@ -1,0 +1,19 @@
+name: flight-data
+organization: okube
+backend: pulumi
+pulumi:
+  config:
+    databricks:host: ${vars.DATABRICKS_HOST}
+    databricks:azure_client_id: ${vars.AZURE_CLIENT_ID}
+    databricks:azure_client_secret: ${vars.AZURE_CLIENT_SECRET}
+    databricks:azure_tenant_id: ${vars.AZURE_TENANT_ID}
+resources:
+  notebooks: ${include.resources/notebooks.yaml}
+  pipelines:
+    pl-flight-data: ${include.resources/pl-flight-data.yaml}
+
+environments:
+  dev:
+    variables:
+      env: dev
+      is_dev: true
