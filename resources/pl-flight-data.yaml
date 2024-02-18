@@ -20,8 +20,8 @@ libraries:
       path: /.laktory/pipelines/dlt_slv_template.py
   - notebook:
       path: /.laktory/pipelines/dlt_gld_template.py
-#  - notebook:
-#      path: /.laktory/pipelines/dlt_gld_stock_performances.py
+  - notebook:
+      path: /.laktory/pipelines/dlt_trimdb.py
 
 #udfs:
 #  - module_name: stock_functions
@@ -116,6 +116,18 @@ tables:
 
 
   # ------------------------------------------------------------------------- #
+  # Trims                                                                     #
+  # ------------------------------------------------------------------------- #
+
+  - name: trims
+    builder:
+      layer: GOLD
+      template: TRIM
+      table_source:
+        name: slv_flight_data
+        read_as_stream: False
+
+  # ------------------------------------------------------------------------- #
   # Master                                                                    #
   # ------------------------------------------------------------------------- #
 
@@ -133,7 +145,7 @@ tables:
       table_source:
         name: slv_flight_data
         read_as_stream: False
-        filter: (timestamp >= '2001-04-20T07:18:00' ) AND (timestamp < '2001-04-20T07:20:00')
+        filter: (timestamp >= '2001-04-20T07:18:00' ) AND (timestamp < '2001-04-20T07:19:30')
 
   - name: qtg_1
     builder:
@@ -149,4 +161,4 @@ tables:
       table_source:
         name: slv_flight_data
         read_as_stream: False
-        filter: (timestamp >= '2001-04-20T07:18:00' ) AND (timestamp < '2001-04-20T07:20:00')
+        filter: (timestamp >= '2001-04-20T07:18:00' ) AND (timestamp < '2001-04-20T07:19:30')
