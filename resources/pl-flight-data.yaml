@@ -1,0 +1,152 @@
+name: pl-flight-data
+
+catalog: ${vars.env}
+target: engineering
+development: ${vars.is_dev}
+configuration:
+  pipeline_name: pl-flight-data
+
+clusters:
+  - name : default
+    node_type_id: Standard_DS3_v2
+    autoscale:
+      min_workers: 1
+      max_workers: 2
+
+libraries:
+  - notebook:
+      path: /.laktory/pipelines/dlt_brz_template.py
+  - notebook:
+      path: /.laktory/pipelines/dlt_slv_template.py
+  - notebook:
+      path: /.laktory/pipelines/dlt_gld_template.py
+#  - notebook:
+#      path: /.laktory/pipelines/dlt_gld_stock_performances.py
+
+#udfs:
+#  - module_name: stock_functions
+#    function_name: symbol_to_name
+
+access_controls:
+  - group_name: account users
+    permission_level: CAN_VIEW
+  - group_name: role-engineers
+    permission_level: CAN_RUN
+
+# --------------------------------------------------------------------------- #
+# Tables                                                                      #
+# --------------------------------------------------------------------------- #
+
+tables:
+
+  # ------------------------------------------------------------------------- #
+  # Flight Data                                                               #
+  # ------------------------------------------------------------------------- #
+
+  - name: brz_flight_data
+    timestamp_key: tstamp
+    builder:
+      layer: BRONZE
+      event_source:
+        name: tail-687
+        fmt: PARQUET
+        producer:
+          name: fdr
+
+
+  - name: slv_flight_data
+    timestamp_key: tstamp
+    builder:
+      layer: SILVER
+      table_source:
+        name: brz_flight_data
+    columns:
+      - name: timestamp
+        type: timestamp
+        spark_func_name: coalesce
+        spark_func_args:
+          - tstamp
+
+      - name: calibrated_airspeed
+        type: double
+        spark_func_name: coalesce
+        spark_func_args:
+          - CAS
+
+      - name: ground_speed
+        type: double
+        spark_func_name: coalesce
+        spark_func_args:
+          - GS
+
+      - name: pressure_altitude
+        type: double
+        spark_func_name: coalesce
+        spark_func_args:
+          - ALT
+
+      - name: true_heading
+        type: double
+        spark_func_name: coalesce
+        spark_func_args:
+          - TH
+
+      - name: angle_of_attack
+        type: double
+        sql_expression: 0.5*(AOA1 + AOA2)
+
+      - name: weight_on_wheels
+        type: double
+        spark_func_name: coalesce
+        spark_func_args:
+          - WOW
+
+      - name: aircraft_number
+        type: string
+        spark_func_name: coalesce
+        spark_func_args:
+          - ACID
+
+      - name: flight_id
+        type: string
+        spark_func_name: concat
+        spark_func_args:
+          - DVER_1
+          - DVER_2
+
+
+  # ------------------------------------------------------------------------- #
+  # Master                                                                    #
+  # ------------------------------------------------------------------------- #
+
+  - name: dev_1
+    builder:
+      layer: GOLD
+      table_source:
+        name: slv_flight_data
+        read_as_stream: False
+        filter: (timestamp >= '2001-04-12T11:06:00' ) AND (timestamp < '2001-04-12T11:08:00')
+
+  - name: dev_2
+    builder:
+      layer: GOLD
+      table_source:
+        name: slv_flight_data
+        read_as_stream: False
+        filter: (timestamp >= '2001-04-20T07:18:00' ) AND (timestamp < '2001-04-20T07:20:00')
+
+  - name: qtg_1
+    builder:
+      layer: GOLD
+      table_source:
+        name: slv_flight_data
+        read_as_stream: False
+        filter: (timestamp >= '2001-04-12T11:06:00' ) AND (timestamp < '2001-04-12T11:08:00')
+
+  - name: qtg_2
+    builder:
+      layer: GOLD
+      table_source:
+        name: slv_flight_data
+        read_as_stream: False
+        filter: (timestamp >= '2001-04-20T07:18:00' ) AND (timestamp < '2001-04-20T07:20:00')
