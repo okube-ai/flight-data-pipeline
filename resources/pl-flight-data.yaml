@@ -23,10 +23,6 @@ libraries:
   - notebook:
       path: /.laktory/pipelines/dlt_trimdb.py
 
-#udfs:
-#  - module_name: stock_functions
-#    function_name: symbol_to_name
-
 access_controls:
   - group_name: account users
     permission_level: CAN_VIEW
