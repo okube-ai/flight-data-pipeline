@@ -97,7 +97,7 @@ tables:
     builder:
       layer: SILVER
       table_source:
-        name: brz_flight_data
+        name: raw_flight_data
     columns:
       - name: timestamp
         type: timestamp
