@@ -21,10 +21,12 @@ for filename in os.listdir(dirpath):
     mat_filepath = os.path.join(dirpath, filename)
     pq_filepath = mat_filepath.replace(f"/tail_{tail}/", f"/tail_{tail}_pq/")
     pq_filepath = pq_filepath.replace(".mat", ".parquet")
+    json_filepath = mat_filepath.replace(f"/tail_{tail}/", f"/tail_{tail}_json/")
+    json_filepath = json_filepath.replace(".mat", ".json")
 
-    if os.path.exists(pq_filepath):
-        # print("Skipping", mat_filepath)
-        continue
+    # if os.path.exists(pq_filepath):
+    #     print("Skipping", mat_filepath)
+        # continue
 
     try:
         data = loadmat(mat_filepath, squeeze_me=True, simplify_cells=True)
@@ -67,7 +69,14 @@ for filename in os.listdir(dirpath):
 
     df = pd.DataFrame(series)
     df["tstamp"] = df.index.astype("str").str.replace(" ", "T")
-    df["flight_id"] = filename
+    df["file_id"] = filename
     df = df.reset_index(drop=True)
 
-    df.to_parquet(pq_filepath.replace(".mat", ".parquet"))
+    df.to_parquet(pq_filepath)
+
+    df_meta = pd.DataFrame({
+        "file_id": [filename],
+        "aircraft_manufacturer": ["Airbus"],
+        "aircraft_model": ["A320"],
+    })
+    df_meta.to_json(json_filepath, orient="records")

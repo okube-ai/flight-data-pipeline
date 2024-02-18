@@ -40,10 +40,48 @@ access_controls:
 tables:
 
   # ------------------------------------------------------------------------- #
+  # MetaData                                                                  #
+  # ------------------------------------------------------------------------- #
+
+  - name: raw_flight_metadata
+    builder:
+      layer: BRONZE
+      event_source:
+        name: tail-687-meta
+        fmt: JSON
+        producer:
+          name: fdr
+
+  - name: curated_flight_metadata
+    builder:
+      layer: SILVER
+      table_source:
+        name: raw_flight_metadata
+
+    columns:
+      - name: file_id
+        type: string
+        spark_func_name: coalesce
+        spark_func_args:
+          - file_id
+
+      - name: aircraft_manufacturer
+        type: string
+        spark_func_name: coalesce
+        spark_func_args:
+          - aircraft_manufacturer
+
+      - name: aircraft_model
+        type: string
+        spark_func_name: coalesce
+        spark_func_args:
+          - aircraft_model
+
+  # ------------------------------------------------------------------------- #
   # Flight Data                                                               #
   # ------------------------------------------------------------------------- #
 
-  - name: brz_flight_data
+  - name: raw_flight_data
     timestamp_key: tstamp
     builder:
       layer: BRONZE
@@ -54,7 +92,7 @@ tables:
           name: fdr
 
 
-  - name: slv_flight_data
+  - name: curated_flight_data
     timestamp_key: tstamp
     builder:
       layer: SILVER
@@ -114,6 +152,34 @@ tables:
           - DVER_1
           - DVER_2
 
+      - name: file_id
+        type: string
+        spark_func_name: coalesce
+        spark_func_args:
+          - file_id
+
+  # ------------------------------------------------------------------------- #
+  # Joined Data                                                               #
+  # ------------------------------------------------------------------------- #
+
+
+  - name: merged_flight_data
+    builder:
+      layer: GOLD
+      table_source:
+        name: curated_flight_data
+        read_as_stream: False
+      joins:
+        - other:
+            name: curated_flight_metadata
+            read_as_stream: False
+            selects:
+              - file_id
+              - aircraft_manufacturer
+              - aircraft_model
+          "on":
+            - file_id
+
 
   # ------------------------------------------------------------------------- #
   # Trims                                                                     #
@@ -124,7 +190,7 @@ tables:
       layer: GOLD
       template: TRIM
       table_source:
-        name: slv_flight_data
+        name: merged_flight_data
         read_as_stream: False
 
   # ------------------------------------------------------------------------- #
@@ -135,7 +201,7 @@ tables:
     builder:
       layer: GOLD
       table_source:
-        name: slv_flight_data
+        name: merged_flight_data
         read_as_stream: False
         filter: (timestamp >= '2001-04-12T11:06:00' ) AND (timestamp < '2001-04-12T11:08:00')
 
@@ -143,7 +209,7 @@ tables:
     builder:
       layer: GOLD
       table_source:
-        name: slv_flight_data
+        name: merged_flight_data
         read_as_stream: False
         filter: (timestamp >= '2001-04-20T07:18:00' ) AND (timestamp < '2001-04-20T07:19:30')
 
@@ -151,7 +217,7 @@ tables:
     builder:
       layer: GOLD
       table_source:
-        name: slv_flight_data
+        name: merged_flight_data
         read_as_stream: False
         filter: (timestamp >= '2001-04-12T11:06:00' ) AND (timestamp < '2001-04-12T11:08:00')
 
@@ -159,6 +225,6 @@ tables:
     builder:
       layer: GOLD
       table_source:
-        name: slv_flight_data
+        name: merged_flight_data
         read_as_stream: False
         filter: (timestamp >= '2001-04-20T07:18:00' ) AND (timestamp < '2001-04-20T07:19:30')
