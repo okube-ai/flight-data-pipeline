@@ -9,22 +9,26 @@ import datetime
 # Read Data                                                                   #
 # --------------------------------------------------------------------------- #
 
+tail = "687_1"
+
 i = -1
-dirpath = "../data/tail_687_1"
+dirpath = f"../data/tail_{tail}"
 for filename in os.listdir(dirpath):
     i += 1
-    if i > 2:
-        continue
+    # if i > 2:
+    #     continue
 
     mat_filepath = os.path.join(dirpath, filename)
-    pq_filepath = mat_filepath.replace(".mat", ".parquet")
+    pq_filepath = mat_filepath.replace(f"/tail_{tail}/", f"/tail_{tail}_pq/")
+    pq_filepath = pq_filepath.replace(".mat", ".parquet")
 
-    # if os.path.exists(pq_filepath):
-    #     continue
+    if os.path.exists(pq_filepath):
+        # print("Skipping", mat_filepath)
+        continue
 
     try:
         data = loadmat(mat_filepath, squeeze_me=True, simplify_cells=True)
-    except ValueError:
+    except:
         continue
     try:
         t0 = datetime.datetime(
@@ -49,7 +53,7 @@ for filename in os.listdir(dirpath):
         _data = data[k]["data"]
         _rate = data[k]["Rate"]
 
-        print(k, data[k]["Description"])
+        # print(k, data[k]["Description"])
 
         if _rate > 4:
             continue
@@ -63,6 +67,7 @@ for filename in os.listdir(dirpath):
 
     df = pd.DataFrame(series)
     df["tstamp"] = df.index.astype("str").str.replace(" ", "T")
+    df["flight_id"] = filename
     df = df.reset_index(drop=True)
 
-    # df.to_parquet(pq_filepath.replace(".mat", ".parquet"))
+    df.to_parquet(pq_filepath.replace(".mat", ".parquet"))
